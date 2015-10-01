@@ -10,7 +10,7 @@ password = 'Elobari1'
 
 # Fetch config from repository
 config_login    = 'simonvpe'
-config_repo     = 'trj'
+config_repo     = 'trj_config'
 config_branch   = 'master'
 config_filename = 'config.json'
 
