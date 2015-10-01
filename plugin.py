@@ -7,7 +7,7 @@ class Plugin(object):
     def __init__(self, repo, name):
         self.repo = repo
         self.name = name
-        self.datastore = Datastore(repo, name)
+        self.datastore = Datastore(repo, name + '.py')
 
     def sync(self):
         if not self.datastore.check_update():
@@ -30,7 +30,7 @@ if __name__ == "__main__":
 
     cred = Credentials('simonvpe','******')
     repo = Repo('simonvpe','trj_modules','master')
-    plug = Plugin(repo, 'helloworld.py')
+    plug = Plugin(repo, 'helloworld')
     plug.sync()
 
     ret = plug.run_async()

@@ -21,7 +21,7 @@ class Datastore(object):
         except:
             pass
 
-        self.file = repo.repo.contents(name, repo.branch_name)
+        self.file = repo.repo.file_contents(name, repo.branch_name)
 
     def check_update(self):
         sha = self.file.sha[:]
