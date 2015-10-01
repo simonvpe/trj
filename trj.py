@@ -17,7 +17,8 @@ config_filename = 'config.json'
 class Model(object):
     def __init__(self, cfg_login, cfg_repo, cfg_branch, cfg_filename, cred=None):
         self.credentials = cred
-        self.config      = Datastore(Repo(cfg_login, cfg_repo, cfg_branch, cred), cfg_filename)
+        self.config_repo = Repo(cfg_login, cfg_repo, cfg_branch, cred)
+        self.config      = Datastore(self.config_repo, cfg_filename)
         self.data_store  = None
         self.plugin_repo = None
 
@@ -46,25 +47,21 @@ class Model(object):
 credentials = Credentials(username, password)
 model       = Model(config_login, config_repo, config_branch, config_filename, credentials)
 
+# Load cfg
 cfg         = json.loads(model.config.data)
 plugin_repo = model.plugin_repo
 plugins     = cfg['plugins'].keys()
 args        = cfg['plugins'].values()
-
-running = []
+data        = json.loads(model.data_store.data)
 
 # Start plugins
+running = []
 for name,arg in zip(plugins, args):
     plug = Plugin(plugin_repo, name)
     plug.sync()
     running.append((name, plug.run_async(arg)))
 
-
-#running = load_plugins(model)
-
 # Join
-d = json.loads(model.data_store.data)
-
 for name, ret in running:
     val = ret.get()
     d[name] = val
