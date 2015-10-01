@@ -5,56 +5,68 @@ import json
 
 from IPython.core.debugger import Tracer
 
+username = 'simonvpe'
+password = 'Elobari1'
+
 # Fetch config from repository
 config_login    = 'simonvpe'
 config_repo     = 'trj'
 config_branch   = 'master'
 config_filename = 'config.json'
 
-config_file = Datastore(
-    Repo(
-        config_login,
-        config_repo,
-        config_branch
-    ),
-    config_filename
-)
-config = json.loads(config_file.data)
+class Model(object):
+    def __init__(self, cfg_login, cfg_repo, cfg_branch, cfg_filename, cred=None):
+        self.credentials = cred
+        self.config      = Datastore(Repo(cfg_login, cfg_repo, cfg_branch, cred), cfg_filename)
+        self.data_store  = None
+        self.plugin_repo = None
 
-# Repository for data is r/w and requires credentials
-datastore = Datastore(
-    Repo(
-        config['data']['login'],
-        config['data']['repo'],
-        config['data']['branch'],
-        Credentials(
-            config['data']['username'],
-            config['data']['password']
+        self.build(self.config)
+
+    def build(self, config):
+        cfg = json.loads(config.data)
+
+        self.data_store = Datastore(
+            Repo(
+                cfg['data']['login'],
+                cfg['data']['repo'],
+                cfg['data']['branch'],
+                self.credentials
+            ),
+            cfg['data']['file']
         )
-    ),
-    config['data']['file']
-)
 
-plugins = config['plugins'].keys()
-args    = config['plugins'].values()
+        self.plugin_repo = Repo(
+            cfg['module']['login'],
+            cfg['module']['repo'],
+            cfg['module']['branch'],
+            self.credentials
+        )
+            
+credentials = Credentials(username, password)
+model       = Model(config_login, config_repo, config_branch, config_filename, credentials)
+
+cfg         = json.loads(model.config.data)
+plugin_repo = model.plugin_repo
+plugins     = cfg['plugins'].keys()
+args        = cfg['plugins'].values()
 
 running = []
 
 # Start plugins
 for name,arg in zip(plugins, args):
-    plug = Plugin(Repo(
-        config['module']['login'],
-        config['module']['repo'],
-        config['module']['branch']
-    ), name)
+    plug = Plugin(plugin_repo, name)
     plug.sync()
     running.append((name, plug.run_async(arg)))
 
+
+#running = load_plugins(model)
+
 # Join
-data = json.loads(datastore.data)
+d = json.loads(model.data_store.data)
 
 for name, ret in running:
     val = ret.get()
-    data[name] = val
+    d[name] = val
 
-datastore.data = json.dumps(data)
+model.data_store.data = json.dumps(d, indent=4)

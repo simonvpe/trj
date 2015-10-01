@@ -1,1 +1,18 @@
-{"data": {"username": "simonvpe", "branch": "master", "repo": "trj_modules", "file": "datastore_file", "login": "simonvpe", "password": "Elobari1"}, "module": {"repo": "trj_modules", "login": "simonvpe", "branch": "master"}, "plugins": {"helloworld": {"number": 12}}}
+{
+    "data": {
+	"login": "simonvpe", 
+	"repo": "trj_data", 
+	"branch": "master", 
+	"file": "datastore_file", 
+    }, 
+    "module": {
+	"login": "simonvpe", 
+	"repo": "trj_modules", 
+	"branch": "master"
+    },
+    "plugins": {
+	"helloworld": {
+	    "number": 12
+	}
+    }
+}
