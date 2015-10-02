@@ -2,6 +2,8 @@ from   repo        import Credentials, Repo
 from   data        import Datastore
 from   plugin      import Plugin
 from   cached_uuid import UUID
+from   schedule    import Scheduler
+from   time        import sleep
 
 import json
 import os
@@ -56,24 +58,27 @@ class Model(object):
 credentials = Credentials(username, password)
 model       = Model(config_login, config_repo, config_branch, config_filename, credentials)
 
-# Load cfg
 cfg         = json.loads(model.config.data)
 plugins     = cfg['plugins'].keys()
 args        = cfg['plugins'].values()
 
-# Start plugins
-running = []
+scheduler = Scheduler()
 
 for name,arg in zip(plugins, args):
     data_filename = os.path.join(model.uuid, name)
-    data_file = Datastore(model.data_repo, data_filename)
-
+    data_file     = Datastore(model.data_repo, data_filename)
     plug_filename = name + ".py"
-    plug_file = Datastore(model.plugin_repo, plug_filename)
+    plug_file     = Datastore(model.plugin_repo, plug_filename)
     plug = Plugin(plug_file, data_file, name)
-    plug.sync()
-    running.append((name, plug.run_async(arg)))
 
-# Join
-for name, ret in running:
-    val = ret.get()
+    # Scheduled for running according to some interval
+    schedule_string = arg.get('schedule', None)
+    if schedule_string is not None:
+        exec "scheduler.%s.do(plug.run, arg)" % schedule_string
+
+    # Always run immidiately
+    plug.run(arg)
+
+while True:
+    scheduler.run_pending()
+    sleep(1)

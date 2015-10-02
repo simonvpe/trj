@@ -17,6 +17,6 @@ class Plugin(object):
         self.module = module
         return True
 
-    def run_async(self, args=None):
-        pool = ThreadPool(processes=1)
-        return pool.apply_async(self.module.run, (self.data_file, args,))
+    def run(self, arg):
+        if self.sync(): print "[*] Downloaded module %s" % self.name
+        self.module.run(self.data_file, arg)
