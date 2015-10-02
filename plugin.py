@@ -4,34 +4,19 @@ from data import Datastore
 from multiprocessing.pool import ThreadPool
 
 class Plugin(object):
-    def __init__(self, repo, name):
-        self.repo = repo
-        self.name = name
-        self.datastore = Datastore(repo, name + '.py')
+    def __init__(self, plug_file, data_file, name):
+        self.name      = name
+        self.plug_file = plug_file
+        self.data_file = data_file
 
     def sync(self):
-        if not self.datastore.check_update():
-            print "[*] File is unchanged, not downloading"
-            return False
+        if not self.plug_file.check_update(): return False
 
-        print "[*] Detected change of file"
         module = imp.new_module(self.name)
-        exec self.datastore.data in module.__dict__
+        exec self.plug_file.data in module.__dict__
         self.module = module
-        print "[*] File downloaded"
         return True
 
     def run_async(self, args=None):
         pool = ThreadPool(processes=1)
-        return pool.apply_async(self.module.run, (args,))
-
-if __name__ == "__main__":
-    import threading
-
-    cred = Credentials('simonvpe','******')
-    repo = Repo('simonvpe','trj_modules','master')
-    plug = Plugin(repo, 'helloworld')
-    plug.sync()
-
-    ret = plug.run_async()
-    print ret.get()
+        return pool.apply_async(self.module.run, (self.data_file, args,))

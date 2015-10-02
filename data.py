@@ -1,5 +1,6 @@
 from base64 import b64decode
 from repo import Credentials, Repo
+from IPython.core.debugger import Tracer
 
 class DatastoreReadonly(object):
     def __init__(self, repo, name):
@@ -18,7 +19,7 @@ class Datastore(object):
                                               "Created file %s" % name,
                                               "{}",
                                               repo.branch_name)
-        except:
+        except Exception, e:
             pass
 
         self.file = repo.repo.file_contents(name, repo.branch_name)
@@ -39,18 +40,10 @@ class Datastore(object):
         
     @data.setter
     def data(self, newdata):
-        if newdata == self.data:
-            print "[!] No change in file %s" % self.name
-            return
+        if newdata == self.data: return
 
         self.file.update("Updated file %s" % self.name,
                          newdata, self.repo.branch_name)
         self.file.refresh()
         self.unread = True
-
-ds = None
-if __name__=="__main__":
-    cred = Credentials('simonvpe','******')
-    repo = Repo('simonvpe','trj_modules','master', cred)
-    ds = Datastore(repo, 'teststore3')
 

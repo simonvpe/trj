@@ -2,6 +2,7 @@ from   appdirs import user_cache_dir
 from   repo    import Credentials, Repo
 from   data    import Datastore
 from   plugin  import Plugin
+from   base64  import b64encode
 import uuid
 import json
 import os
@@ -25,7 +26,6 @@ class UUID(object):
 
         if not os.path.exists(self.dir):
             os.makedirs(self.dir)
-            print "[*] Created %s" % self.dir
 
     def uuid(self):
         filename = os.path.join(self.dir, 'uuid')
@@ -44,24 +44,29 @@ class UUID(object):
 class Model(object):
     def __init__(self, cfg_login, cfg_repo, cfg_branch, cfg_filename, cred=None):
         self.credentials = cred
-        self.config_repo = Repo(cfg_login, cfg_repo, cfg_branch, cred)
-        self.config      = Datastore(self.config_repo, cfg_filename)
-        self.data_store  = None
+        self.config = Datastore(
+            Repo(
+                cfg_login,
+                cfg_repo,
+                cfg_branch,
+                cred
+            ),
+            cfg_filename
+        )
+
+        self.data_repo   = None
         self.plugin_repo = None
-        self.uuid        = UUID()
+        self.uuid        = b64encode(UUID().uuid())
         self.build(self.config)
 
     def build(self, config):
         cfg = json.loads(config.data)
 
-        self.data_store = Datastore(
-            Repo(
-                cfg['data']['login'],
-                cfg['data']['repo'],
-                cfg['data']['branch'],
-                self.credentials
-            ),
-            self.uuid.uuid()
+        self.data_repo = Repo(
+            cfg['data']['login'],
+            cfg['data']['repo'],
+            cfg['data']['branch'],
+            self.credentials
         )
 
         self.plugin_repo = Repo(
@@ -77,21 +82,22 @@ model       = Model(config_login, config_repo, config_branch, config_filename, c
 
 # Load cfg
 cfg         = json.loads(model.config.data)
-plugin_repo = model.plugin_repo
 plugins     = cfg['plugins'].keys()
 args        = cfg['plugins'].values()
-data        = json.loads(model.data_store.data)
 
 # Start plugins
 running = []
+
 for name,arg in zip(plugins, args):
-    plug = Plugin(plugin_repo, name)
+    data_filename = os.path.join(model.uuid, name)
+    data_file = Datastore(model.data_repo, data_filename)
+
+    plug_filename = name + ".py"
+    plug_file = Datastore(model.plugin_repo, plug_filename)
+    plug = Plugin(plug_file, data_file, name)
     plug.sync()
     running.append((name, plug.run_async(arg)))
 
 # Join
 for name, ret in running:
     val = ret.get()
-    data[name] = val
-
-model.data_store.data = json.dumps(data, indent=4)
