@@ -2,7 +2,7 @@ from   appdirs import user_cache_dir
 from   repo    import Credentials, Repo
 from   data    import Datastore
 from   plugin  import Plugin
-from   base64  import b64encode
+
 import uuid
 import json
 import os
@@ -56,7 +56,7 @@ class Model(object):
 
         self.data_repo   = None
         self.plugin_repo = None
-        self.uuid        = b64encode(UUID().uuid())
+        self.uuid        = UUID().uuid()
         self.build(self.config)
 
     def build(self, config):
